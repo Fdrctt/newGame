@@ -29,9 +29,7 @@ let world;
 let sphereBody;//this will be the physics body
 
 let clock;
-document.addEventListener('keydown', handleKeyDown);
-document.addEventListener('keyup', handleKeyUp);
-
+let stats;
 
 let keys = {
   left: false,
@@ -39,6 +37,66 @@ let keys = {
   up: false,
   down: false
 };
+
+const mazePositions = [
+  [9.7, -6.8, 'hor'],
+  [4.7, -6.8, 'hor'],
+  [-4.4, -6.8, 'hor'],
+  [7, -3.4, 'ver'],
+  [7, 0.7, 'ver'],
+  [5, 1.8, 'ver'],
+  [-4.4, -6.8, 'hor'],
+  [5, 1.8, 'ver'],
+  [-2.5, -1.7, 'hor'],
+  [2.5, -1.7, 'hor'],
+  [2.5, -1.7, 'hor'],
+  [10.7, -2.5, 'hor'],
+  [12.55, -1, 'hor'],
+  [14, 0.8, 'ver'],
+  [-0.9, -3.3, 'hor'],
+  [0.9, -4.75, 'ver'],
+  [0.9, -4.75, 'ver'],
+  [-9.5, -6.8, 'hor'],
+  [0.9, -4.75, 'ver'],
+  [4, -3.2, 'ver'],
+  [1, 3, 'ver'],
+  [12.1, 2.4, 'ver'],
+  [9, -1.05, 'ver'],
+  [-9.5, -2.6, 'hor'],
+  [-11, -1, 'hor'],
+  [-7.5, -5, 'hor'],
+  [-11.5, 0.8, 'hor'],
+  [-11.5, 2.5, 'hor'],
+  [-9.5, 4.3, 'hor'],
+  [-9.5, 6, 'hor'],
+  [-4.3, 0, 'hor'],
+  [-2.9, 3.5, 'hor'],
+  [-2.5, 1.6, 'hor'],
+  [-2.5, -5, 'hor'],
+  [2.5, 6, 'hor'],
+  [7.5, 6.8, 'hor'],
+  [12.5, 6.8, 'hor'],
+  [8.5, 5, 'hor'],
+  [11.5, -4, 'hor'],
+  [12.95, -5.6, 'ver'],
+  [6.8, 3.25, 'hor'],
+  [6.8, 3.25, 'hor'],
+  [3, 1.5, 'ver'],
+  [10, 3.5, 'ver'],
+  [-6, 5, 'ver'],
+  [-4, 6, 'ver'],
+  [-1, 4.95, 'ver'],
+  [-13, 3.95, 'ver'],
+  [-13, 3.95, 'ver'],
+  [-12.9, -2.45, 'ver'],
+  [-8, -1.15, 'ver'],
+  [-8, -1.15, 'ver'],
+  [-6, -3.5, 'ver']
+];
+
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
+
 
 // Function to handle key down events
 function handleKeyDown(event) {
@@ -72,19 +130,15 @@ function handleKeyUp(event) {
 function updateRotation() {
   const rotationSpeed = 0.05; // Adjust as needed
   const currentRotation = new THREE.Euler().setFromQuaternion(planeMesh.quaternion);
-console.log('currentRotation: ', currentRotation.y)
     // Maximum allowed rotation angles
     const minRotationX =-1.2; // 45 degrees in radians
     const maxRotationX =-1.8;
     const minRotationY =0.3; // 45 degrees in radians
     const maxRotationY =-0.3;
-   //ß const maxRotationY = Math.PI / 9; // 45 degrees in radians
-    console.log('maxRotationY: ', maxRotationY)
-    //console.log('maxRotationY: ', maxRotationY)
 
     // Rotate left
     if (keys.left && (currentRotation.y < minRotationY)) {
-        planeBody.quaternion = planeBody.quaternion.mult(new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, 1, 0), rotationSpeed));
+     planeBody.quaternion = planeBody.quaternion.mult(new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(0, 1, 0), rotationSpeed));
     }
     // Rotate right
     if (keys.right && (currentRotation.y > maxRotationY)) {
@@ -99,24 +153,11 @@ console.log('currentRotation: ', currentRotation.y)
         planeBody.quaternion = planeBody.quaternion.mult(new CANNON.Quaternion().setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -rotationSpeed));
     }
 }
-//helpers
-let stats, gridHelper;
-function logCameraPerspective() {
-  console.log('Camera position:', camera.position);
-  console.log('Camera rotation:', camera.rotation);
-}
-
-// Event listener for user interaction (e.g., mouse move)
-window.addEventListener('mousemove', function(event) {
-  // Call the logCameraPerspective function whenever the user interacts with the scene
-  //logCameraPerspective();
-});
 
 function init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-  //camera.position.set( 0, 20, 0 );
-  //camera.rotation.set(0,0,0)
+
   camera.position.set(-7.061412524130943e-9, 19.999999999989964, 0.000020000887739530166);
   camera.rotation.set(-1.57079532675051, -3.5307062617529264e-10, -0.0003530549404951961);
   
@@ -156,13 +197,6 @@ function init() {
   dirLight.shadow.camera.far = 100; // default
   //add to scene
   scene.add( dirLight );
-  //see where your directional light is
-  // const dirLightHelper = new THREE.DirectionalLightHelper( dirLight, 10 );
-  // scene.add( dirLightHelper );
-
-  //Create a helper for the shadow camera (optional)
-  // const helper = new THREE.CameraHelper( dirLight.shadow.camera );
-  // scene.add( helper );
 
   geometry = new THREE.SphereGeometry( 0.5, 32, 16 );
   material = new THREE.MeshPhysicalMaterial( {
@@ -197,22 +231,12 @@ function init() {
   planeBody = new CANNON.Body({ mass: 0 });
   planeBody.addShape(planeShape,planeMesh.position);
    planeBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-  // planeBody.position.copy(planeMesh.position);
- // world.addBody(planeBody);
-
- 
     
   clock = new THREE.Clock();
-
-  //Debug Helpers
-  // gridHelper = new THREE.GridHelper( 40, 40 );
-  // scene.add( gridHelper );
-
-   cannonDebugRenderer = new CannonDebugger(scene, world, {
-  //   // options...
-   });
-   
-   createBorder(planeMesh);
+  // cannonDebugRenderer = new CannonDebugger(scene, world, {
+  //   //   // options...
+     //});
+  createBorder(planeMesh);
 
   world.addBody(planeBody);
   world.addBody(sphereBody);
@@ -227,7 +251,7 @@ function init() {
 
   const loader = new THREE.TextureLoader();
 loader.load(
-    '/textures/mytex/TexW2.jpg', // Make sure this path is correct
+    '/public/text.jpg', // Make sure this path is correct
     function(texture) {
         // Update the existing plane material with the loaded texture
         planeMesh.material.map = texture;
@@ -238,67 +262,19 @@ loader.load(
         console.error('An error occurred loading the texture:', error);
     }
   );
-
-  addWallRelativeToPlane(planeMesh, 9.7, -6.8, 'hor');
-  addWallRelativeToPlane(planeMesh, 4.7, -6.8, 'hor');
-  addWallRelativeToPlane(planeMesh, -4.4, -6.8, 'hor');
-  addWallRelativeToPlane(planeMesh, 7, -3.4, 'ver');
-  addWallRelativeToPlane(planeMesh, 7, 0.7, 'ver');
-  addWallRelativeToPlane(planeMesh, 5, 1.8, 'ver');
-  addWallRelativeToPlane(planeMesh, -4.4, -6.8, 'hor');
-  addWallRelativeToPlane(planeMesh, 5, 1.8, 'ver');
-  addWallRelativeToPlane(planeMesh, -2.5, -1.7, 'hor');
-  addWallRelativeToPlane(planeMesh, 2.5, -1.7, 'hor');
-  addWallRelativeToPlane(planeMesh, 2.5, -1.7, 'hor');
-  addWallRelativeToPlane(planeMesh, 10.7, -2.5, 'hor');
-  addWallRelativeToPlane(planeMesh, 12.55, -1, 'hor');
-  addWallRelativeToPlane(planeMesh, 14, 0.8, 'ver');
-  addWallRelativeToPlane(planeMesh, -0.9, -3.3, 'hor');
-  addWallRelativeToPlane(planeMesh, 0.9, -4.75, 'ver');
-  addWallRelativeToPlane(planeMesh, 0.9, -4.75, 'ver');
-  addWallRelativeToPlane(planeMesh, -9.5, -6.8, 'hor');
-  addWallRelativeToPlane(planeMesh, 0.9, -4.75, 'ver');
-  addWallRelativeToPlane(planeMesh, 4, -3.2, 'ver');
-  addWallRelativeToPlane(planeMesh, 1, 3, 'ver');
-  addWallRelativeToPlane(planeMesh, 12.1, 2.4, 'ver');
-  addWallRelativeToPlane(planeMesh, 9, -1.05, 'ver');
-  addWallRelativeToPlane(planeMesh, -9.5, -2.6, 'hor');
-  addWallRelativeToPlane(planeMesh, -11, -1, 'hor');
-  addWallRelativeToPlane(planeMesh, -7.5, -5, 'hor');
-  addWallRelativeToPlane(planeMesh, -11.5, 0.8, 'hor');
-  addWallRelativeToPlane(planeMesh, -11.5, 2.5, 'hor');
-  addWallRelativeToPlane(planeMesh, -9.5, 4.3, 'hor');
-  addWallRelativeToPlane(planeMesh, -9.5, 6, 'hor');
-  addWallRelativeToPlane(planeMesh, -4.3, 0, 'hor');
-  addWallRelativeToPlane(planeMesh, -2.9, 3.5, 'hor');
-  addWallRelativeToPlane(planeMesh, -2.5, 1.6, 'hor');
-  addWallRelativeToPlane(planeMesh, -2.5, -5, 'hor');
-  addWallRelativeToPlane(planeMesh, 2.5, 6, 'hor');
-  addWallRelativeToPlane(planeMesh, 7.5, 6.8, 'hor');
-  addWallRelativeToPlane(planeMesh, 12.5, 6.8, 'hor');
-  addWallRelativeToPlane(planeMesh, 8.5, 5, 'hor');
-  addWallRelativeToPlane(planeMesh, 11.5, -4, 'hor');
-  addWallRelativeToPlane(planeMesh, 12.95, -5.6, 'ver');
-  addWallRelativeToPlane(planeMesh, 6.8, 3.25, 'hor');
-  addWallRelativeToPlane(planeMesh, 6.8, 3.25, 'hor');
-  addWallRelativeToPlane(planeMesh, 3, 1.5, 'ver');
-  addWallRelativeToPlane(planeMesh, 10, 3.5, 'ver');
-  addWallRelativeToPlane(planeMesh, -6, 5, 'ver');
-  addWallRelativeToPlane(planeMesh, -4, 6, 'ver');
-  addWallRelativeToPlane(planeMesh, -1, 4.95, 'ver');
-  addWallRelativeToPlane(planeMesh, -13, 3.95, 'ver');
-  addWallRelativeToPlane(planeMesh, -13, 3.95, 'ver');
-  addWallRelativeToPlane(planeMesh, -12.9, -2.45, 'ver');
-  addWallRelativeToPlane(planeMesh, -8, -1.15, 'ver');
-  addWallRelativeToPlane(planeMesh, -8, -1.15, 'ver');
-  addWallRelativeToPlane(planeMesh, -6, -3.5, 'ver');
-
-
-
+  addWallRelativeToPlane(planeMesh);
+  
 
 }
-function addWallRelativeToPlane(parent, x, y, dir) {
+
+function addWallRelativeToPlane(parent) {
   let geometry
+
+  mazePositions.forEach(pos => {
+    let x = pos[0];
+    let y = pos[1];
+    let dir = pos[2];
+  
 if(dir == 'hor'){
    geometry = new THREE.BoxGeometry(3.4, 1, 0.5);
 }
@@ -320,18 +296,14 @@ else{
   // Create Cannon.js box shape for the wall
   let wallShape;
   if(dir == 'hor'){
-   // geometry = new THREE.BoxGeometry(3.4, 1, 0.5);
      wallShape = new CANNON.Box(new CANNON.Vec3(1.7,0.5,0.25));
 
  }
  else{
-  //  geometry = new THREE.BoxGeometry(0.5,1, 3.4);
      wallShape = new CANNON.Box(new CANNON.Vec3(0.25,0.5, 1.7));
 
  }
   const wallBody = new CANNON.Body({ mass: 1 }); // Assuming the wall is static
-
- // wallBody.position.copy(wallMesh.position);
   wallBody.addShape(wallShape);
   wallBody.quaternion.set(
     wallMesh.quaternion.x,
@@ -339,9 +311,8 @@ else{
     wallMesh.quaternion.z,
     wallMesh.quaternion.w
   );
- // wallBody.position.copy(wallMesh.position);
- //wallBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-  planeBody.addShape(wallShape, new CANNON.Vec3(x,y,0.5), wallBody.quaternion);
+   planeBody.addShape(wallShape, new CANNON.Vec3(x,y,0.5), wallBody.quaternion);
+})
 }
 
 function createLid(parent){
@@ -463,29 +434,13 @@ function animate() {
 
   // Copy coordinates from Cannon-es to Three.js
    sphere.position.set(sphereBody.position.x, sphereBody.position.y, sphereBody.position.z);
-  // sphere.quaternion.set(
-  //     sphereBody.quaternion.x,
-  //     sphereBody.quaternion.y,
-  //     sphereBody.quaternion.z,
-  //     sphereBody.quaternion.w
-  // );
   if (sphere.position.y <= 0.5 ) {
-    //createLid(); // Call the function to create the lid
 }
   planeMesh.position.copy(planeBody.position);
   planeMesh.quaternion.copy(planeBody.quaternion);
 
-  //planeBody.position.x +=0.01;
 
-  
-//   const deltaQuaternion = new CANNON.Quaternion();
-// deltaQuaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), 0.01); // Assuming rotation around the x-axis
-
-// // Apply the rotation increment to the body's quaternion
-// planeBody.quaternion = planeBody.quaternion.mult(deltaQuaternion);
-  
-
-updateRotation();
+  updateRotation();
 
 
   //physics step
@@ -497,7 +452,7 @@ updateRotation();
 
   //update stats
   stats.update();
- cannonDebugRenderer.update();//comment this out normally
+ //cannonDebugRenderer.update();//comment this out normally
 }
 
 //initialize then call animation loop
